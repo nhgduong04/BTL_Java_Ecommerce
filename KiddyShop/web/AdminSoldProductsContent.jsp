@@ -103,7 +103,7 @@
                             <td>${loop.index + 1}</td>
                             <td>
                                 <img src="${item.product.image}" alt="${item.product.name}" 
-                                     class="product-image" onerror="this.src='https://via.placeholder.com/80'">
+                                     class="product-image" onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/images/placeholder-80.svg';">
                             </td>
                             <td>
                                 <strong>${item.product.name}</strong>

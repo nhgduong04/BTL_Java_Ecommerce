@@ -255,8 +255,9 @@
         <div class="card-body" style="width: 100%;">
             <c:set var="minDefault" value="0" />
             <c:set var="maxDefault" value="1000000" />
-            <c:set var="minInit" value="${empty param.min ? minDefault : param.min}" />
-            <c:set var="maxInit" value="${empty param.max ? maxDefault : param.max}" />
+            <!-- Prefer explicit request params (from GET). If absent, fall back to controller-set attributes. -->
+            <c:set var="minInit" value="${not empty param.min ? param.min : (not empty filterMin ? filterMin : minDefault)}" />
+            <c:set var="maxInit" value="${not empty param.max ? param.max : (not empty filterMax ? filterMax : maxDefault)}" />
 
             <form id="filtersForm" method="get" action="${url}" style="width:100%;">
                 <input type="hidden" name="page" value="1"/>
@@ -277,25 +278,24 @@
                                     Tất cả màu sắc
                                 </label>
                             </li>
-                            <c:set var="colors">red,pink,blue,white,black</c:set>
-                            <c:forTokens var="cName" items="${colors}" delims=",">
-                                <li class="list-group-item ${param.color == cName ? 'active' : ''}" data-color="${cName}">
+                            <c:forEach items="${colorsList}" var="c">
+                                <li class="list-group-item ${param.color == c.colorId ? 'active' : ''}" data-color="${c.colorId}">
                                     <label style="width:100%;cursor:pointer;margin:0;display:flex;align-items:center;">
-                                        <input type="radio" name="color" value="${cName}" style="display:none;" ${param.color == cName ? 'checked' : ''} />
-                                        <span class="swatch-circle swatch-${cName}"></span>
-                                        <span style="text-transform:capitalize">
+                                        <input type="radio" name="color" value="${c.colorId}" style="display:none;" ${param.color == c.colorId ? 'checked' : ''} />
+                                        <span class="swatch-circle">
                                             <c:choose>
-                                                <c:when test="${cName == 'red'}">Đỏ</c:when>
-                                                <c:when test="${cName == 'pink'}">Hồng</c:when>
-                                                <c:when test="${cName == 'blue'}">Xanh</c:when>
-                                                <c:when test="${cName == 'white'}">Trắng</c:when>
-                                                <c:when test="${cName == 'black'}">Đen</c:when>
-                                                <c:otherwise>${cName}</c:otherwise>
+                                                <c:when test="${c.colorName == 'Đen'}"><i style="display:block;width:100%;height:100%;background:#333;border-radius:50%;"></i></c:when>
+                                                <c:when test="${c.colorName == 'Đỏ'}"><i style="display:block;width:100%;height:100%;background:#ff6b6b;border-radius:50%;"></i></c:when>
+                                                <c:when test="${c.colorName == 'Hồng'}"><i style="display:block;width:100%;height:100%;background:#ff85c0;border-radius:50%;"></i></c:when>
+                                                <c:when test="${c.colorName == 'Trắng'}"><i style="display:block;width:100%;height:100%;background:#ffffff;border-radius:50%;border:1px solid #ddd;"></i></c:when>
+                                                <c:when test="${c.colorName == 'Xanh'}"><i style="display:block;width:100%;height:100%;background:#79e2ff;border-radius:50%;"></i></c:when>
+                                                <c:otherwise><i style="display:block;width:100%;height:100%;background:#ccc;border-radius:50%;"></i></c:otherwise>
                                             </c:choose>
                                         </span>
+                                        <span style="margin-left:8px;">${c.colorName}</span>
                                     </label>
                                 </li>
-                            </c:forTokens>
+                            </c:forEach>
                         </ul>
                     </div>
                 </div>
@@ -310,12 +310,11 @@
                             <label class="btn ${empty param.size ? 'btn-primary' : 'btn-outline-primary'} btn-sm" style="cursor:pointer;">
                                 <input type="radio" name="size" value="" style="display:none;" ${empty param.size ? 'checked' : ''}/> Tất cả
                             </label>
-                            <c:set var="sizes">S,M,L,XL</c:set>
-                            <c:forTokens var="sName" items="${sizes}" delims=",">
-                                <label class="btn ${param.size == sName ? 'btn-primary' : 'btn-outline-primary'} btn-sm" style="cursor:pointer;">
-                                    <input type="radio" name="size" value="${sName}" style="display:none;" ${param.size == sName ? 'checked' : ''}/> ${sName}
+                            <c:forEach items="${sizesList}" var="s">
+                                <label class="btn ${param.size == s.sizeId ? 'btn-primary' : 'btn-outline-primary'} btn-sm" style="cursor:pointer;">
+                                    <input type="radio" name="size" value="${s.sizeId}" style="display:none;" ${param.size == s.sizeId ? 'checked' : ''}/> ${s.sizeName}
                                 </label>
-                            </c:forTokens>
+                            </c:forEach>
                         </div>
                     </div>
                 </div>
@@ -451,6 +450,64 @@
                         });
                     }
 
+                })();
+            </script>
+            <script>
+                // AJAX apply for filters and pagination
+                (function(){
+                    var $form = $('#filtersForm');
+
+                    function updateProductAreaFromUrl(url) {
+                        // fetch the target page and replace #productArea
+                        $.get(url).done(function(html){
+                            try {
+                                var newArea = $(html).find('#productArea').html();
+                                if(newArea) {
+                                    $('#productArea').html(newArea);
+                                } else {
+                                    console.warn('productArea not found in response');
+                                }
+                            } catch (e) {
+                                console.error('Failed to update product area', e);
+                            }
+                        }).fail(function(){
+                            console.error('AJAX request failed for', url);
+                            // fallback: navigate
+                            window.location.href = url;
+                        });
+                    }
+
+                    // intercept apply button / form submit
+                    $(document).on('submit', '#filtersForm', function(e){
+                        e.preventDefault();
+                        var action = $form.attr('action') || window.location.pathname;
+                        var params = $form.serialize();
+                        var url = action + (action.indexOf('?') === -1 ? '?' : '&') + params;
+
+                        // Update browser URL and history
+                        try { window.history.pushState({}, '', url); } catch(e) {}
+
+                        updateProductAreaFromUrl(url);
+                    });
+
+                    // intercept pagination links inside productArea
+                    $(document).on('click', '#productArea .kid-pagination a', function(e){
+                        e.preventDefault();
+                        var url = $(this).attr('href');
+                        if(!url) return;
+
+                        // Keep filters form inputs in sync with URL (optional)
+                        // Update history
+                        try { window.history.pushState({}, '', url); } catch(e) {}
+
+                        updateProductAreaFromUrl(url);
+                    });
+
+                    // handle browser back/forward
+                    window.addEventListener('popstate', function(e){
+                        // reload content for current location
+                        updateProductAreaFromUrl(window.location.pathname + window.location.search);
+                    });
                 })();
             </script>
         </div>

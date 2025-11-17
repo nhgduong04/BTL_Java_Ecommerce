@@ -7,6 +7,8 @@ package control;
 import dao.DAO;
 import entity.Category;
 import entity.Product;
+import entity.Color;
+import entity.Size;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -60,9 +62,15 @@ public class SearchControl extends HttpServlet {
         List<Category> listC = dao.getAllCategory();
         Product last = dao.getLast();
 
+        // colors and sizes for Left.jsp
+        List<Color> colors = dao.getAllColors();
+        List<Size> sizes = dao.getAllSizes();
+
         request.setAttribute("listP", list);
         request.setAttribute("p", last);
         request.setAttribute("listCC", listC);
+        request.setAttribute("colorsList", colors);
+        request.setAttribute("sizesList", sizes);
         request.setAttribute("txtS", txtSearch);
     request.setAttribute("sort", sort);
         request.setAttribute("page", page);

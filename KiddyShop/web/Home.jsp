@@ -276,6 +276,8 @@
 
                 <!-- Main Content -->
                 <div class="col-sm-9">
+                    <!-- Product area (AJAX-updatable) -->
+                    <div id="productArea">
                     <!-- Filter bar -->
                     <div class="d-flex align-items-center mb-3" style="gap:10px;">
                         <div class="small text-muted">Sắp xếp theo</div>
@@ -285,6 +287,10 @@
                             <c:param name="page" value="1" />
                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
+                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                         </c:url>
                         <a href="${popularUrl}" class="btn" style="background:#EC407A;color:white;font-weight:700;">Phổ Biến</a>
 
@@ -293,6 +299,10 @@
                             <c:param name="page" value="1" />
                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
+                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                         </c:url>
                         <a href="${priceAscUrl}" class="btn" style="background:#fff;border:1px solid #FCE4EC;color:#C2185B;font-weight:700;">Giá ↑</a>
 
@@ -301,6 +311,10 @@
                             <c:param name="page" value="1" />
                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
+                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                         </c:url>
                         <a href="${priceDescUrl}" class="btn" style="background:#fff;border:1px solid #FCE4EC;color:#C2185B;font-weight:700;">Giá ↓</a>
                     </div>
@@ -320,14 +334,7 @@
                                                 <p class="btn btn-price btn-block"><fmt:formatNumber value="${o.price}" type="number" pattern="#,###"/> đ</p>
                                             </div>
                                             <div class="col">
-                                                <c:choose>
-                                                    <c:when test="${o.quantity == 0}">
-                                                        <button class="btn btn-secondary btn-block" disabled>Out of stock</button>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <button onclick="addToCart('${o.id}')" class="btn btn-kid-cart btn-block">Add to cart</button>
-                                                    </c:otherwise>
-                                                </c:choose>
+                                                <a href="detail?pid=${o.id}" class="btn btn-kid-cart btn-block">Add to cart</a>
                                             </div>
                                         </div>
                                     </div>
@@ -347,6 +354,10 @@
                                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
                                             <c:if test="${not empty sort}"><c:param name="sort" value="${sort}" /></c:if>
+                                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                                         </c:url>
                                         <li class="page-item">
                                             <a class="page-link" href="${prevUrl}" aria-label="Previous">
@@ -361,6 +372,10 @@
                                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
                                             <c:if test="${not empty sort}"><c:param name="sort" value="${sort}" /></c:if>
+                                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                                         </c:url>
                                         <li class="page-item ${i == page ? 'active' : ''}"><a class="page-link" href="${pageUrl}">${i}</a></li>
                                     </c:forEach>
@@ -371,6 +386,10 @@
                                             <c:if test="${not empty tag}"><c:param name="cid" value="${tag}" /></c:if>
                                             <c:if test="${not empty txtS}"><c:param name="txt" value="${txtS}" /></c:if>
                                             <c:if test="${not empty sort}"><c:param name="sort" value="${sort}" /></c:if>
+                                            <c:if test="${not empty param.color}"><c:param name="color" value="${param.color}"/></c:if>
+                                            <c:if test="${not empty param.size}"><c:param name="size" value="${param.size}"/></c:if>
+                                            <c:if test="${not empty param.min}"><c:param name="min" value="${param.min}"/></c:if>
+                                            <c:if test="${not empty param.max}"><c:param name="max" value="${param.max}"/></c:if>
                                         </c:url>
                                         <li class="page-item">
                                             <a class="page-link" href="${nextUrl}" aria-label="Next">
@@ -382,6 +401,7 @@
                             </nav>
                         </div>
                     </div>
+                    </div> <!-- /#productArea -->
                 </div>
             </div>
         </div>

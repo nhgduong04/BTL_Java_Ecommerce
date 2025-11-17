@@ -258,17 +258,13 @@
                                             </span> 
                                         </p> 
 
-                                        <!-- Phần chọn màu sắc -->
+                                        <!-- Phần chọn màu sắc (rendered dynamically from variantsList/colorsList/sizesList) -->
                                         <div class="option-section">
                                             <div class="option-title">
                                                 <i class="fas fa-palette me-2"></i>Chọn màu sắc
                                             </div>
-                                            <div class="color-options">
-                                                <div class="color-option selected" style="background-color: #ff85c0;" data-color="pink" data-color-name="Hồng"></div>
-                                                <div class="color-option" style="background-color: #79e2ff;" data-color="blue" data-color-name="Xanh"></div>
-                                                <div class="color-option" style="background-color: #ffffff; border: 1px solid #ddd;" data-color="white" data-color-name="Trắng"></div>
-                                                <div class="color-option" style="background-color: #b19cd9;" data-color="purple" data-color-name="Tím"></div>
-                                                <div class="color-option" style="background-color: #ff6b6b;" data-color="red" data-color-name="Đỏ"></div>
+                                            <div class="color-options" id="colorOptionsContainer">
+                                                <!-- populated by JS -->
                                             </div>
                                         </div>
 
@@ -277,21 +273,12 @@
                                             <div class="option-title">
                                                 <i class="fas fa-ruler me-2"></i>Chọn size
                                             </div>
-                                            <div class="size-options">
-                                                <div class="size-option selected" data-size="S">S</div>
-                                                <div class="size-option" data-size="M">M</div>
-                                                <div class="size-option" data-size="L">L</div>
-                                                <div class="size-option" data-size="XL">XL</div>
-                                                <div class="size-option disabled" data-size="XXL">XXL</div>
+                                            <div class="size-options" id="sizeOptionsContainer">
+                                                <!-- populated by JS -->
                                             </div>
                                         </div>
 
-                                        <!-- Hiển thị lựa chọn đã chọn -->
-                                        <div class="selected-options">
-                                            <p><i class="fas fa-check-circle me-2"></i>Đã chọn:</p>
-                                            <p id="selectedColorText">Màu sắc: <strong>Hồng</strong></p>
-                                            <p id="selectedSizeText">Size: <strong>S</strong></p>
-                                        </div>
+                                        <!-- (Removed) Previously displayed selected options block -->
 
                                         <dl class="item-property">
                                             <dt>Mô tả sản phẩm</dt>
@@ -342,55 +329,212 @@
        </div>
        
        <script>
-           // Biến lưu trữ lựa chọn
-           let selectedColor = 'pink';
-           let selectedColorName = 'Hồng';
-           let selectedSize = 'S';
+           // Prepare data structures from server-side lists
+           var variants = [
+               <c:forEach var="v" items="${variantsList}" varStatus="s">
+                   {variantId: ${v.variantId}, productId: ${v.productId}, colorId: ${v.colorId}, sizeId: ${v.sizeId}, quantity: ${v.quantity}}<c:if test="${not s.last}">,</c:if>
+               </c:forEach>
+           ];
 
-           // Xử lý chọn màu sắc
-           document.querySelectorAll('.color-option').forEach(option => {
-               option.addEventListener('click', function() {
-                   // Bỏ chọn tất cả
-                   document.querySelectorAll('.color-option').forEach(opt => {
-                       opt.classList.remove('selected');
-                   });
-                   // Chọn option hiện tại
-                   this.classList.add('selected');
-                   
-                   // Cập nhật biến
-                   selectedColor = this.getAttribute('data-color');
-                   selectedColorName = this.getAttribute('data-color-name');
-                   
-                   // Cập nhật hiển thị
-                   updateSelectedOptions();
-               });
-           });
+           var colorMap = {};
+           <c:forEach var="c" items="${colorsList}">
+               colorMap[${c.colorId}] = "${c.colorName}";
+           </c:forEach>
 
-           // Xử lý chọn size
-           document.querySelectorAll('.size-option').forEach(option => {
-               option.addEventListener('click', function() {
-                   if (!this.classList.contains('disabled')) {
-                       // Bỏ chọn tất cả
-                       document.querySelectorAll('.size-option').forEach(opt => {
-                           opt.classList.remove('selected');
-                       });
-                       // Chọn option hiện tại
-                       this.classList.add('selected');
-                       
-                       // Cập nhật biến
-                       selectedSize = this.getAttribute('data-size');
-                       
-                       // Cập nhật hiển thị
-                       updateSelectedOptions();
-                   }
-               });
-           });
+           var sizeMap = {};
+           <c:forEach var="s" items="${sizesList}">
+               sizeMap[${s.sizeId}] = "${s.sizeName}";
+           </c:forEach>
 
-           // Cập nhật hiển thị lựa chọn
-           function updateSelectedOptions() {
-               document.getElementById('selectedColorText').innerHTML = `Màu sắc: <strong>${selectedColorName}</strong>`;
-               document.getElementById('selectedSizeText').innerHTML = `Size: <strong>${selectedSize}</strong>`;
+           // Utility: build list of unique colorIds from variants
+           function uniqueColors() {
+               var m = {};
+               variants.forEach(function(v){ if (v.quantity > 0) m[v.colorId]=true; });
+               return Object.keys(m).map(function(k){ return parseInt(k); });
            }
+
+           function uniqueSizesForColor(colorId) {
+               var m = {};
+               variants.forEach(function(v){ if (v.colorId == colorId && v.quantity > 0) m[v.sizeId]=true; });
+               return Object.keys(m).map(function(k){ return parseInt(k); });
+           }
+
+           function uniqueSizesAll() {
+               var m = {};
+               variants.forEach(function(v){ if (v.quantity > 0) m[v.sizeId]=true; });
+               return Object.keys(m).map(function(k){ return parseInt(k); });
+           }
+
+           function findVariant(colorId, sizeId) {
+               for (var i=0;i<variants.length;i++){
+                   var v = variants[i];
+                   if (v.colorId == colorId && v.sizeId == sizeId) return v;
+               }
+               return null;
+           }
+
+           // Render color and size options
+           function renderOptions() {
+               var colorContainer = document.getElementById('colorOptionsContainer');
+               var sizeContainer = document.getElementById('sizeOptionsContainer');
+               colorContainer.innerHTML = '';
+               sizeContainer.innerHTML = '';
+
+               var colors = uniqueColors();
+               colors.forEach(function(cid, idx){
+                   var name = colorMap[cid] || ('Màu ' + cid);
+                   var div = document.createElement('div');
+                   div.className = 'color-option';
+                   div.dataset.colorId = cid;
+                   div.dataset.colorName = name;
+                   // simple swatch mapping by name
+                   var bg = '#ccc';
+                   if (name.indexOf('Đen')>=0) bg = '#333';
+                   else if (name.indexOf('Đỏ')>=0) bg = '#ff6b6b';
+                   else if (name.indexOf('Hồng')>=0) bg = '#ff85c0';
+                   else if (name.indexOf('Trắng')>=0) bg = '#ffffff';
+                   else if (name.indexOf('Xanh')>=0) bg = '#79e2ff';
+                   div.style.background = bg;
+                   if (bg === '#ffffff') div.style.border = '1px solid #ddd';
+                   colorContainer.appendChild(div);
+               });
+
+               // render sizes by default (all available sizes)
+               renderSizesForColor(null);
+           }
+
+           // selection state
+           var selectedColorId = null;
+           var selectedSizeId = null;
+           var selectedVariant = null;
+
+           function updateSelectedDisplay() {
+               var colorEl = document.getElementById('selectedColorText');
+               if (colorEl) colorEl.innerHTML = 'Màu sắc: <strong>' + (selectedColorId ? (colorMap[selectedColorId]||selectedColorId) : '—') + '</strong>';
+               var sizeEl = document.getElementById('selectedSizeText');
+               if (sizeEl) sizeEl.innerHTML = 'Size: <strong>' + (selectedSizeId ? (sizeMap[selectedSizeId]||selectedSizeId) : '—') + '</strong>';
+               var qtyElDisplay = document.getElementById('selectedQtyText');
+               if (qtyElDisplay) qtyElDisplay.innerHTML = 'Sẵn có: <strong>' + (selectedVariant ? selectedVariant.quantity : '—') + '</strong>';
+               var qtyEl = document.getElementById('quantityInput');
+               if (selectedVariant) {
+                   if (qtyEl) {
+                       qtyEl.max = selectedVariant.quantity;
+                       if (parseInt(qtyEl.value) > selectedVariant.quantity) qtyEl.value = selectedVariant.quantity;
+                   }
+                   var addBtn = document.getElementById('addToCartBtn'); if (addBtn) addBtn.disabled = false;
+                   var buyBtn = document.getElementById('buyNowBtn'); if (buyBtn) buyBtn.disabled = false;
+               } else {
+                   if (qtyEl) qtyEl.removeAttribute('max');
+                   var addBtn2 = document.getElementById('addToCartBtn'); if (addBtn2) addBtn2.disabled = true;
+                   var buyBtn2 = document.getElementById('buyNowBtn'); if (buyBtn2) buyBtn2.disabled = true;
+               }
+           }
+
+           function renderSizesForColor(colorId) {
+               var sizeContainer = document.getElementById('sizeOptionsContainer');
+               sizeContainer.innerHTML = '';
+               // If colorId provided, we will enable only sizes available for that color
+               var sizes = uniqueSizesAll();
+               sizes.forEach(function(sid){
+                   var name = sizeMap[sid] || sid;
+                   var div = document.createElement('div');
+                   div.className = 'size-option';
+                   div.dataset.sizeId = sid;
+                   div.textContent = name;
+                   // determine availability
+                   var available = false;
+                   for (var i=0;i<variants.length;i++){
+                       var v = variants[i];
+                       if (v.sizeId == sid && v.quantity > 0) {
+                           if (colorId == null) { available = true; break; }
+                           if (v.colorId == colorId) { available = true; break; }
+                       }
+                   }
+                   if (!available) div.classList.add('disabled');
+                   sizeContainer.appendChild(div);
+               });
+               // attach handlers
+               sizeContainer.querySelectorAll('.size-option').forEach(function(opt){
+                   opt.addEventListener('click', function(){
+                       if (this.classList.contains('disabled')) return;
+                       // mark selected
+                       sizeContainer.querySelectorAll('.size-option').forEach(function(o){ o.classList.remove('selected'); });
+                       this.classList.add('selected');
+                       selectedSizeId = parseInt(this.dataset.sizeId);
+                       if (selectedColorId) {
+                           selectedVariant = findVariant(selectedColorId, selectedSizeId);
+                       } else {
+                           selectedVariant = null; // not fully selected until color chosen
+                       }
+                       updateSelectedDisplay();
+                   });
+               });
+
+               // If a size was previously selected, ensure it stays selected if still available
+               if (selectedSizeId) {
+                   var prev = sizeContainer.querySelector('.size-option[data-size-id="' + selectedSizeId + '"]');
+                   if (prev && !prev.classList.contains('disabled')) {
+                       prev.classList.add('selected');
+                   } else {
+                       selectedSizeId = null;
+                       selectedVariant = null;
+                   }
+               }
+           }
+
+           // initialize
+           renderOptions();
+           // color click handlers
+           document.getElementById('colorOptionsContainer').addEventListener('click', function(e){
+               var el = e.target.closest('.color-option');
+               if (!el) return;
+               selectedColorId = parseInt(el.dataset.colorId);
+               selectedSizeId = null;
+               selectedVariant = null;
+               // highlight selected
+               document.querySelectorAll('.color-option').forEach(function(o){ o.classList.remove('selected'); });
+               el.classList.add('selected');
+               // render sizes for this color
+               renderSizesForColor(selectedColorId);
+               updateSelectedDisplay();
+           });
+
+           // Helper: get query param
+           function getUrlParam(name) {
+               name = name.replace(/[\[\]]/g, '\\$&');
+               var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+               var results = regex.exec(window.location.href);
+               if (!results) return null;
+               if (!results[2]) return '';
+               return decodeURIComponent(results[2].replace(/\+/g, ' '));
+           }
+
+           // If a variant_id is provided in URL, preselect that variant
+           (function preselectFromUrl() {
+               var vid = getUrlParam('variant_id') || getUrlParam('variantId') || getUrlParam('vid');
+               if (!vid) return;
+               vid = parseInt(vid);
+               var found = null;
+               for (var i=0;i<variants.length;i++){
+                   if (variants[i].variantId == vid) { found = variants[i]; break; }
+               }
+               if (!found) return;
+               // set selected color/size and render accordingly
+               selectedColorId = found.colorId;
+               selectedSizeId = found.sizeId;
+               selectedVariant = found;
+               // mark color selected after render
+               // ensure options are rendered
+               renderOptions();
+               // highlight color
+               var colorEl = document.querySelector('.color-option[data-color-id="' + selectedColorId + '"]');
+               if (colorEl) colorEl.classList.add('selected');
+               // render sizes for color and select size
+               renderSizesForColor(selectedColorId);
+               var sizeEl = document.querySelector('.size-option[data-size-id="' + selectedSizeId + '"]');
+               if (sizeEl) sizeEl.classList.add('selected');
+               updateSelectedDisplay();
+           })();
 
            function addToCart(pid, redirectToCheckout) {
                console.log('Adding product to cart:', pid);
@@ -399,10 +543,17 @@
                if (qtyEl) {
                    qty = parseInt(qtyEl.value) || 1;
                }
-               
-               // Thêm thông tin màu sắc và size vào URL
-               const url = `addtocart?pid=${pid}&quantity=${qty}&color=${selectedColor}&size=${selectedSize}`;
-               
+
+               // Prefer to send variant_id when available
+               var params = 'pid=' + encodeURIComponent(pid) + '&quantity=' + encodeURIComponent(qty);
+               if (typeof selectedVariant !== 'undefined' && selectedVariant && selectedVariant.variantId) {
+                   params += '&variant_id=' + encodeURIComponent(selectedVariant.variantId);
+               } else if (typeof selectedColorId !== 'undefined' && selectedColorId && typeof selectedSizeId !== 'undefined' && selectedSizeId) {
+                   params += '&color=' + encodeURIComponent(selectedColorId) + '&size=' + encodeURIComponent(selectedSizeId);
+               }
+
+               var url = 'addtocart?' + params;
+
                fetch(url)
                    .then(function(response) {
                        console.log('Response status:', response.status);
@@ -413,7 +564,7 @@
                        try {
                            var data = JSON.parse(text);
                            console.log('Parsed data:', data);
-                           
+
                            if (data.success) {
                                showToast(data.message, 'success');
                                if (redirectToCheckout) {

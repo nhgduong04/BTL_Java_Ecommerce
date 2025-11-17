@@ -197,7 +197,7 @@
                         <td><strong>${o.id}</strong></td>
                         <td>${o.name}</td>
                         <td>
-                            <img src="${o.image}" alt="${o.name}" class="product-image" onerror="this.src='https://via.placeholder.com/80'">
+                            <img src="${o.image}" alt="${o.name}" class="product-image" onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/images/placeholder-80.svg';">
                         </td>
                         <td>-</td>
                         <td>-</td>
