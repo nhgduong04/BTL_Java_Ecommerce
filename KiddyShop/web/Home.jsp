@@ -248,7 +248,25 @@
                 opacity: 0.5;
                 pointer-events: none;
             }
-
+            /* Toast UI */
+            .kiddy-toast {position:fixed; top:90px; right:24px; z-index:9999; width:320px; display:none; padding:14px 16px 14px 14px; border-radius:18px; box-shadow:0 10px 28px rgba(236,64,122,0.25); background:#fff; border:2px solid #FCE4EC; font-family:'Nunito',sans-serif; transform:translateX(30px); opacity:0; transition:transform .4s cubic-bezier(.4,0,.2,1), opacity .4s; }
+            .kiddy-toast.is-visible {display:flex; opacity:1; transform:translateX(0);}
+            .kiddy-toast__icon {width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-right:12px; flex-shrink:0;}
+            .kiddy-toast__content {flex:1; display:flex; flex-direction:column; gap:4px;}
+            .kiddy-toast__title {font-weight:800; font-size:15px; letter-spacing:.3px; color:#C2185B;}
+            .kiddy-toast__message {font-size:13px; color:#555; line-height:1.4;}
+            .kiddy-toast__close {background:transparent; border:none; color:#AD1457; font-size:20px; line-height:1; cursor:pointer; padding:0 4px; align-self:flex-start; transition:color .2s;}
+            .kiddy-toast__close:hover {color:#EC407A;}
+            .kiddy-toast__progress {height:5px; background:#FCE4EC; border-radius:20px; overflow:hidden; margin-top:8px;}
+            .kiddy-toast__progress span {display:block; height:100%; width:100%; background:linear-gradient(90deg,#F06292,#EC407A); transform-origin:left; animation:kiddyToastProgress 3.2s linear forwards;}
+            @keyframes kiddyToastProgress {from {transform:scaleX(1);} to {transform:scaleX(0);} }
+            .kiddy-toast--success {border-color:#C8E6C9;}
+            .kiddy-toast--success .kiddy-toast__icon {background:linear-gradient(135deg,#66bb6a,#43a047); color:#fff;}
+            .kiddy-toast--success .kiddy-toast__title {color:#2e7d32;}
+            .kiddy-toast--error {border-color:#ffcdd2;}
+            .kiddy-toast--error .kiddy-toast__icon {background:linear-gradient(135deg,#e53935,#b71c1c); color:#fff;}
+            .kiddy-toast--error .kiddy-toast__title {color:#b71c1c;}
+            @media (max-width:576px){.kiddy-toast{right:12px; width:calc(100% - 24px);} }
         </style>
         </head>
     <body>
@@ -409,16 +427,15 @@
         <!-- Include Footer -->
         <jsp:include page="Footer.jsp"></jsp:include>
         
-        <div id="toast" class="toast" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 250px; display: none;">
-            <div class="toast-header bg-success text-white">
-                <strong class="mr-auto"><i class="fa fa-check-circle"></i> Thông báo</strong>
-                <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast">
-                    <span>&times;</span>
-                </button>
+        <!-- Toast Notification -->
+        <div id="kiddyToast" class="kiddy-toast" role="alert" aria-live="polite" aria-atomic="true">
+            <div class="kiddy-toast__icon" id="kiddyToastIcon"><i class="fas fa-info"></i></div>
+            <div class="kiddy-toast__content">
+                <div class="kiddy-toast__title" id="kiddyToastTitle">Thông báo</div>
+                <div class="kiddy-toast__message" id="kiddyToastMessage">Đã thêm vào giỏ hàng thành công!</div>
+                <div class="kiddy-toast__progress"><span id="kiddyToastProgress"></span></div>
             </div>
-            <div class="toast-body" id="toastMessage">
-                Đã thêm vào giỏ hàng thành công!
-            </div>
+            <button type="button" class="kiddy-toast__close" id="kiddyToastClose" aria-label="Đóng">&times;</button>
         </div>
         
         <script>
@@ -462,43 +479,41 @@
             }
             
             function showToast(message, type) {
-                console.log('Showing toast:', message, type);
-                var toast = document.getElementById('toast');
-                var toastMessage = document.getElementById('toastMessage');
-                
-                if (!toast || !toastMessage) {
-                    console.error('Toast element not found!');
-                    alert(message);
-                    return;
-                }
-                
-                toastMessage.textContent = message;
-                var toastHeader = toast.querySelector('.toast-header');
-                if (toastHeader) {
-                    if (type === 'success') {
-                        toastHeader.className = 'toast-header bg-success text-white';
-                    } else {
-                        toastHeader.className = 'toast-header bg-danger text-white';
-                    }
-                }
-                
-                if (typeof $ !== 'undefined' && $.fn.toast) {
-                    $(toast).toast({
-                        autohide: true,
-                        delay: 3000
-                    });
-                    $(toast).toast('show');
+                var toast = document.getElementById('kiddyToast');
+                if(!toast) { alert(message); return; }
+                var titleEl = document.getElementById('kiddyToastTitle');
+                var msgEl = document.getElementById('kiddyToastMessage');
+                var iconEl = document.getElementById('kiddyToastIcon');
+                var progressEl = document.getElementById('kiddyToastProgress');
+                // Reset classes
+                toast.classList.remove('kiddy-toast--success','kiddy-toast--error');
+                if(type === 'success') {
+                    toast.classList.add('kiddy-toast--success');
+                    iconEl.innerHTML = '<i class="fas fa-check"></i>';
+                    titleEl.textContent = 'Thành công';
                 } else {
-                    toast.style.display = 'block';
-                    toast.classList.add('show');
-                    setTimeout(function() {
-                        toast.classList.remove('show');
-                        setTimeout(function() {
-                            toast.style.display = 'none';
-                         }, 300);
-                    }, 3000);
+                    toast.classList.add('kiddy-toast--error');
+                    iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                    titleEl.textContent = 'Lỗi';
                 }
+                msgEl.textContent = message;
+                // Restart progress bar animation
+                progressEl.style.animation = 'none';
+                void progressEl.offsetWidth; // trigger reflow
+                progressEl.style.animation = 'kiddyToastProgress 3.2s linear forwards';
+                toast.classList.add('is-visible');
+                // Auto hide
+                clearTimeout(window.__kiddyToastTimer);
+                window.__kiddyToastTimer = setTimeout(function(){ hideToast(); }, 3200);
             }
+            function hideToast(){
+                var toast = document.getElementById('kiddyToast');
+                if(!toast) return;
+                toast.classList.remove('is-visible');
+                setTimeout(function(){ toast.style.display='none'; },400);
+            }
+            // Close button
+            document.getElementById('kiddyToastClose').addEventListener('click', hideToast);
         </script>
         <script>
             // Script dropdown (Giữ nguyên)
