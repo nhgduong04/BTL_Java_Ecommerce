@@ -92,9 +92,8 @@ public class ChangePasswordControl extends HttpServlet {
         // Xóa flag yêu cầu đổi mật khẩu
         session.removeAttribute("requirePasswordChange");
         
-        // Cập nhật account trong session với mật khẩu mới
-        account.setPass(newPassword);
-        session.setAttribute("acc", account);
+        // No need to update account password in session since it's now hashed
+        // The hashed password is already updated in the database
         
         session.setAttribute("changePasswordMess", "Đổi mật khẩu thành công!");
         session.setAttribute("changePasswordMessType", "success");

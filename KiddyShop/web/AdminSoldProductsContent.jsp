@@ -110,8 +110,8 @@
                                 <br>
                                 <small class="text-muted">ID: ${item.product.id}</small>
                             </td>
-                            <td>-</td>
-                            <td>-</td>
+                            <td>${item.sizeName != null ? item.sizeName : '-'}</td>
+                            <td>${item.colorName != null ? item.colorName : '-'}</td>
                             <td>
                                 <fmt:formatNumber value="${item.product.price}" 
                                                   type="number" 

@@ -1,7 +1,7 @@
 package control;
 
 import dao.DAO;
-import dao.DAO.SoldProductInfo;
+// Removed SoldProductInfo import; using variant-level SoldVariantInfo instead.
 import entity.Account;
 import java.io.IOException;
 import java.util.List;
@@ -31,8 +31,8 @@ public class AdminSoldProductsControl extends HttpServlet {
         }
         
         DAO dao = new DAO();
-        List<SoldProductInfo> list = dao.getSoldProducts();
-        
+        // Use variant-level breakdown instead of product-level aggregation
+        List<DAO.SoldVariantInfo> list = dao.getSoldProductVariants();
         request.setAttribute("list", list);
         request.setAttribute("contentPage", "AdminSoldProductsContent.jsp");
         request.getRequestDispatcher("AdminDashboardLayout.jsp").forward(request, response);
