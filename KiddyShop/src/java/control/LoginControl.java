@@ -4,8 +4,8 @@
  */
 package control;
 
-import dao.DAO;
 import entity.Account;
+import service.AccountService;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -37,8 +37,8 @@ public class LoginControl extends HttpServlet {
         String username = request.getParameter("user");
         String password = request.getParameter("pass");
         
-        DAO dao = new DAO();
-        Account a = dao.login(username, password);
+        AccountService accountService = new AccountService();
+        Account a = accountService.login(username, password);
         if (a == null) {
             request.setAttribute("mess", "Wrong user or pass");
             request.getRequestDispatcher("Login.jsp").forward(request, response);

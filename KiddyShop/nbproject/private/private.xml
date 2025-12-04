@@ -3,11 +3,16 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/payment/vnpay/VnPayReturnServlet.java</file>
-            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/payment/vnpay/VnPayIpnServlet.java</file>
-            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/payment/vnpay/VnPayGatewayServlet.java</file>
+            <file>file:/D:/NetBeans22/KiddyShop/web/Home.jsp</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/AdminDashboardControl.java</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/dao/DAO.java</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/AdminSoldProductsControl.java</file>
+            <file>file:/D:/NetBeans22/KiddyShop/web/AdminSoldProductsContent.jsp</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/util/PasswordUtil.java</file>
+            <file>file:/D:/NetBeans22/KiddyShop/web/Home-page.jsp</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/AddCategoryControl.java</file>
             <file>file:/D:/NetBeans22/KiddyShop/web/Checkout.jsp</file>
-            <file>file:/D:/NetBeans22/KiddyShop/web/OrderSuccess.jsp</file>
+            <file>file:/D:/NetBeans22/KiddyShop/src/java/control/AdminOrderControl.java</file>
         </group>
     </open-files>
 </project-private>

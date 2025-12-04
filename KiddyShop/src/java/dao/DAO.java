@@ -1457,75 +1457,6 @@ public double getRevenueBySelectedYear(int year, int month, int day) {
     }
     return 0;
 }
-//    public double getRevenueBySelectedWeek(int year, int month, int day) {
-//        // Tính từ đầu tuần của ngày được chọn đến ngày đó
-//        String query = "SELECT COALESCE(SUM(totalPrice), 0) FROM orders WHERE status != 'Cancelled' " +
-//                      "AND YEAR(orderDate) = ? " +
-//                      "AND WEEK(orderDate, 1) = WEEK(?, 1) " +
-//                      "AND DATE(orderDate) <= ?";
-//        try {
-//            conn = new DBContext().getConnection();
-//            ps = conn.prepareStatement(query);
-//            String selectedDate = String.format("%04d-%02d-%02d", year, month, day);
-//            ps.setInt(1, year);
-//            ps.setString(2, selectedDate);
-//            ps.setString(3, selectedDate);
-//            rs = ps.executeQuery();
-//            if (rs.next()) {
-//                double result = rs.getDouble(1);
-//                return rs.wasNull() ? 0 : result;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return 0;
-//    }
-//    
-//    public double getRevenueBySelectedMonth(int year, int month, int day) {
-//        // Tính từ đầu tháng của ngày được chọn đến ngày đó
-//        String query = "SELECT COALESCE(SUM(totalPrice), 0) FROM orders WHERE status != 'Cancelled' " +
-//                      "AND YEAR(orderDate) = ? " +
-//                      "AND MONTH(orderDate) = ? " +
-//                      "AND DATE(orderDate) <= ?";
-//        try {
-//            conn = new DBContext().getConnection();
-//            ps = conn.prepareStatement(query);
-//            String selectedDate = String.format("%04d-%02d-%02d", year, month, day);
-//            ps.setInt(1, year);
-//            ps.setInt(2, month);
-//            ps.setString(3, selectedDate);
-//            rs = ps.executeQuery();
-//            if (rs.next()) {
-//                double result = rs.getDouble(1);
-//                return rs.wasNull() ? 0 : result;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return 0;
-//    }
-//    
-//    public double getRevenueBySelectedYear(int year, int month, int day) {
-//        // Tính từ đầu năm của ngày được chọn đến ngày đó
-//        String query = "SELECT COALESCE(SUM(totalPrice), 0) FROM orders WHERE status != 'Cancelled' " +
-//                      "AND YEAR(orderDate) = ? " +
-//                      "AND DATE(orderDate) <= ?";
-//        try {
-//            conn = new DBContext().getConnection();
-//            ps = conn.prepareStatement(query);
-//            String selectedDate = String.format("%04d-%02d-%02d", year, month, day);
-//            ps.setInt(1, year);
-//            ps.setString(2, selectedDate);
-//            rs = ps.executeQuery();
-//            if (rs.next()) {
-//                double result = rs.getDouble(1);
-//                return rs.wasNull() ? 0 : result;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return 0;
-//    }
 //    
     // ========== USER MANAGEMENT (ADMIN) ==========
     public List<Account> getAllAccounts() {
@@ -1790,6 +1721,76 @@ public double getRevenueBySelectedYear(int year, int month, int day) {
         try {
             conn = new DBContext().getConnection();
             ps = conn.prepareStatement(query);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                Product product = new Product(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    rs.getString("image"),
+                    rs.getLong("price"),
+                    rs.getString("title"),
+                    rs.getString("description"),
+                    rs.getInt("cateID")
+                );
+                int variantId = rs.getInt("variant_id");
+                String sizeName = rs.getString("size_name");
+                String colorName = rs.getString("color_name");
+                int totalSold = rs.getInt("totalSold");
+                double totalRevenue = rs.getDouble("totalRevenue");
+                list.add(new SoldVariantInfo(product, variantId, sizeName, colorName, totalSold, totalRevenue));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Variant-level best sellers within a date range
+    public List<SoldVariantInfo> getSoldProductVariantsByRange(String range) {
+        List<SoldVariantInfo> list = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT p.id, p.name, p.image, p.price, p.title, p.description, p.cateID, ")
+          .append("pv.variant_id, si.size_name, co.color_name, ")
+          .append("SUM(od.amount) AS totalSold, SUM(od.amount * od.price) AS totalRevenue ")
+          .append("FROM orderdetails od ")
+          .append("JOIN orders o ON od.orderID = o.id ")
+          .append("JOIN product_variants pv ON od.variant_id = pv.variant_id ")
+          .append("JOIN product p ON pv.product_id = p.id ")
+          .append("LEFT JOIN size si ON pv.size_id = si.size_id ")
+          .append("LEFT JOIN color co ON pv.color_id = co.color_id ")
+          .append("WHERE o.status != 'Cancelled' AND od.variant_id IS NOT NULL ");
+
+        // Apply date range filter based on orders.orderDate
+        if (range != null) {
+            switch (range) {
+                case "today":
+                    sb.append(" AND DATE(o.orderDate) = CURDATE() ");
+                    break;
+                case "yesterday":
+                    sb.append(" AND DATE(o.orderDate) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) ");
+                    break;
+                case "last7":
+                    sb.append(" AND DATE(o.orderDate) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ");
+                    break;
+                case "thisMonth":
+                    sb.append(" AND YEAR(o.orderDate) = YEAR(CURDATE()) AND MONTH(o.orderDate) = MONTH(CURDATE()) ");
+                    break;
+                case "lastMonth":
+                    sb.append(" AND YEAR(o.orderDate) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) ")
+                      .append(" AND MONTH(o.orderDate) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) ");
+                    break;
+                default:
+                    // no extra filter
+                    break;
+            }
+        }
+
+        sb.append(" GROUP BY p.id, p.name, p.image, p.price, p.title, p.description, p.cateID, pv.variant_id, si.size_name, co.color_name ")
+          .append(" ORDER BY totalSold DESC");
+
+        try {
+            conn = new DBContext().getConnection();
+            ps = conn.prepareStatement(sb.toString());
             rs = ps.executeQuery();
             while (rs.next()) {
                 Product product = new Product(
